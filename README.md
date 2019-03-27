@@ -11,6 +11,8 @@ This program is in early development stages - not suitable for use yet.
 * Checking for stable and unstable releases
 * Updating the game
 * Auto-detecting any external modifications of game folders and taking them into account inside launcher
+* Program database containing informations about CDDA mods, soundpacks and tilesets
+* Program database updates not requiring the program update
 * Mod manager including ability to automatically update known mods from GitHub or CDDA-CC database
 * Soundpack manager including ability to automatically update known soundtracks from GitHub or CDDA-CC database
 * Tileset manager including ability to automatically update known tilesets from GitHub or CDDA-CC database
