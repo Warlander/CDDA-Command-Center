@@ -8,7 +8,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
 import org.controlsfx.control.StatusBar;
-import pl.warlander.cdda.launcher.model.DirectoriesManager;
+import pl.warlander.cdda.launcher.model.directories.DirectoriesManager;
 
 public class LauncherPane extends BorderPane {
     
@@ -26,19 +26,12 @@ public class LauncherPane extends BorderPane {
     private final DirectoriesManager directoriesManager;
     
     public LauncherPane() {
-        setDisable(true);
         executor = Executors.newSingleThreadExecutor();
         statusBar = new StatusBar();
         setBottom(statusBar);
         
         directoriesManager = new DirectoriesManager();
-        submitTask(() -> {
-            Platform.runLater(() -> statusBar.setText("Initializing file system"));
-            directoriesManager.initialize();
-            Platform.runLater(() -> {
-                setDisable(false);
-            });
-        });
+        directoriesManager.initialize();
         
         gamePane = new GamePane(this);
         Tab game = createTab("Game", gamePane);
@@ -72,6 +65,10 @@ public class LauncherPane extends BorderPane {
     
     public StatusBar getStatusBar() {
         return statusBar;
+    }
+    
+    public DirectoriesManager getDirectoriesManager() {
+        return directoriesManager;
     }
     
 }

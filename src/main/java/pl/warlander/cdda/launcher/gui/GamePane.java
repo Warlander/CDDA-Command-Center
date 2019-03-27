@@ -1,7 +1,6 @@
 package pl.warlander.cdda.launcher.gui;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -10,8 +9,10 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -20,9 +21,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import pl.warlander.cdda.launcher.model.builds.BuildData;
 import pl.warlander.cdda.launcher.model.builds.BuildsManager;
-import pl.warlander.cdda.launcher.model.builds.ExperimentalBuildsManager;
 import pl.warlander.cdda.launcher.model.changelog.ChangelogManager;
-import pl.warlander.cdda.launcher.model.changelog.ExperimentalChangelogManager;
 
 public class GamePane extends VBox {
 
@@ -43,22 +42,63 @@ public class GamePane extends VBox {
         Label buildLabel = createGridLabel("Build:", 1);
         buildField = createGridTextField(1);
 
-        GridPane grid = new GridPane();
-        grid.setPadding(new Insets(5));
-        grid.setHgap(5);
-        grid.setVgap(5);
-        ColumnConstraints labelColumn = new ColumnConstraints(60);
-        labelColumn.setHgrow(Priority.ALWAYS);
-        ColumnConstraints fieldColumn = new ColumnConstraints();
-        fieldColumn.setHgrow(Priority.ALWAYS);
-        fieldColumn.setFillWidth(true);
-        grid.getColumnConstraints().addAll(labelColumn, fieldColumn);
-        grid.getChildren().addAll(versionLabel, versionField, buildLabel, buildField);
+        GridPane currentVersionGrid = new GridPane();
+        currentVersionGrid.setPadding(new Insets(5));
+        currentVersionGrid.setHgap(5);
+        currentVersionGrid.setVgap(5);
+        ColumnConstraints currentVersionlabelColumn = new ColumnConstraints(60);
+        currentVersionlabelColumn.setHgrow(Priority.ALWAYS);
+        ColumnConstraints currentVersionfieldColumn = new ColumnConstraints();
+        currentVersionfieldColumn.setHgrow(Priority.ALWAYS);
+        currentVersionfieldColumn.setFillWidth(true);
+        currentVersionGrid.getColumnConstraints().addAll(currentVersionlabelColumn, currentVersionfieldColumn);
+        currentVersionGrid.getChildren().addAll(versionLabel, versionField, buildLabel, buildField);
 
+        ToggleGroup buildsGroup = new ToggleGroup();
+        Label buildsLabel = createGridLabel("Builds: ", 0);
+        RadioButton experimentalBuildsRadio = createGridRadioButton("Experimental", buildsGroup, 1, 0);
+        RadioButton stableBuildsRadio = createGridRadioButton("Stable", buildsGroup, 2, 0);
+        if (parent.getDirectoriesManager().getLauncherProperties().useExperimentalBuilds) {
+            experimentalBuildsRadio.setSelected(true);
+        }
+        else {
+            stableBuildsRadio.setSelected(true);
+        }
+        experimentalBuildsRadio.selectedProperty().addListener((ov, oldValue, newValue) -> {
+            parent.getDirectoriesManager().getLauncherProperties().useExperimentalBuilds = newValue;
+        });
+        
+        ToggleGroup graphicsGroup = new ToggleGroup();
+        Label graphicsLabel = createGridLabel("Graphics: ", 1);
+        RadioButton tilesGraphicsRadio = createGridRadioButton("Tiles", graphicsGroup, 1, 1);
+        RadioButton cursesGraphicsRadio = createGridRadioButton("Curses", graphicsGroup, 2, 1);
+        if (parent.getDirectoriesManager().getLauncherProperties().useTilesBuilds) {
+            tilesGraphicsRadio.setSelected(true);
+        }
+        else {
+            cursesGraphicsRadio.setSelected(true);
+        }
+        tilesGraphicsRadio.selectedProperty().addListener((ov, oldValue, newValue) -> {
+            parent.getDirectoriesManager().getLauncherProperties().useTilesBuilds = newValue;
+        });
+        
+        GridPane buildsGrid = new GridPane();
+        buildsGrid.setPadding(new Insets(5));
+        buildsGrid.setHgap(5);
+        buildsGrid.setVgap(5);
+        ColumnConstraints buildsLabelColumn = new ColumnConstraints(60);
+        buildsLabelColumn.setHgrow(Priority.ALWAYS);
+        ColumnConstraints buildsRadioColumn = new ColumnConstraints(100);
+        buildsRadioColumn.setHgrow(Priority.ALWAYS);
+        ColumnConstraints buildsRadioColumn2 = new ColumnConstraints(100);
+        buildsRadioColumn2.setHgrow(Priority.ALWAYS);
+        buildsGrid.getColumnConstraints().addAll(buildsLabelColumn, buildsRadioColumn, buildsRadioColumn2);
+        buildsGrid.getChildren().addAll(buildsLabel, experimentalBuildsRadio, stableBuildsRadio, graphicsLabel, tilesGraphicsRadio, cursesGraphicsRadio);
+        
+        
         Label availableBuildsLabel = new Label("Available builds: ");
         buildsComboBox = new ComboBox();
         buildsComboBox.setMaxWidth(Double.MAX_VALUE);
-
         HBox.setHgrow(buildsComboBox, Priority.ALWAYS);
         Button refreshButton = new Button("Refresh");
         HBox buildSelectBox = new HBox(availableBuildsLabel, buildsComboBox, refreshButton);
@@ -70,7 +110,7 @@ public class GamePane extends VBox {
         buildsChangelogView = new WebView();
         buildsChangelogView.setFontScale(0.75);
 
-        getChildren().addAll(grid, new Separator(), buildSelectBox, buildsChangelogView);
+        getChildren().addAll(currentVersionGrid, new Separator(), buildsGrid, buildSelectBox, buildsChangelogView);
 
         parent.submitTask(() -> {
             updateBuilds();
@@ -134,6 +174,13 @@ public class GamePane extends VBox {
         textField.setText("Loading, please wait");
         GridPane.setConstraints(textField, 1, row);
         return textField;
+    }
+    
+    private RadioButton createGridRadioButton(String text, ToggleGroup group, int column, int row) {
+        RadioButton radioButton = new RadioButton(text);
+        radioButton.setToggleGroup(group);
+        GridPane.setConstraints(radioButton, column, row);
+        return radioButton;
     }
 
 }
