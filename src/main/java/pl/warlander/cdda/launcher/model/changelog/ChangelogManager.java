@@ -12,7 +12,7 @@ public interface ChangelogManager {
             return new ExperimentalChangelogManager();
         }
         else {
-            throw new UnsupportedOperationException("Stable changelog manager not implemented yet");
+            return new StableChangelogManager();
         }
     }
     

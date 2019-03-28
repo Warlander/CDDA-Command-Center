@@ -66,6 +66,7 @@ public class GamePane extends VBox {
         }
         experimentalBuildsRadio.selectedProperty().addListener((ov, oldValue, newValue) -> {
             parent.getDirectoriesManager().getLauncherProperties().useExperimentalBuilds = newValue;
+            updateState();
         });
         
         ToggleGroup graphicsGroup = new ToggleGroup();
@@ -80,6 +81,7 @@ public class GamePane extends VBox {
         }
         tilesGraphicsRadio.selectedProperty().addListener((ov, oldValue, newValue) -> {
             parent.getDirectoriesManager().getLauncherProperties().useTilesBuilds = newValue;
+            updateState();
         });
         
         GridPane buildsGrid = new GridPane();
@@ -111,23 +113,30 @@ public class GamePane extends VBox {
         buildsChangelogView.setFontScale(0.75);
 
         getChildren().addAll(currentVersionGrid, new Separator(), buildsGrid, buildSelectBox, buildsChangelogView);
-
+        
+        updateState();
+    }
+    
+    private void updateState() {
+        setDisable(true);
         parent.submitTask(() -> {
             updateBuilds();
             updateChangelog();
+            Platform.runLater(() -> {
+                setDisable(false);
+            });
         });
     }
     
     private void updateBuilds() {
-        boolean experimental = true;
-        boolean tiles = true;
         try {
             Platform.runLater(() -> {
                 parent.getStatusBar().setText("Fetching new builds");
             });
-            BuildsManager buildsManager = BuildsManager.createBuildsManager(experimental);
-            BuildData[] builds = buildsManager.fetchBuilds(tiles);
+            BuildsManager buildsManager = BuildsManager.createBuildsManager(parent.getDirectoriesManager().getLauncherProperties().useExperimentalBuilds);
+            BuildData[] builds = buildsManager.fetchBuilds(parent.getDirectoriesManager().getLauncherProperties().useTilesBuilds);
             Platform.runLater(() -> {
+                buildsComboBox.getItems().clear();
                 buildsComboBox.getItems().addAll(builds);
                 buildsComboBox.getSelectionModel().selectFirst();
             });
@@ -137,13 +146,12 @@ public class GamePane extends VBox {
     }
     
     private void updateChangelog() {
-        boolean experimental = true;
         try {
             Platform.runLater(() -> {
                 parent.getStatusBar().setText("Fetching changelog");
             });
 
-            ChangelogManager changelogManager = ChangelogManager.createChangelogManager(experimental);
+            ChangelogManager changelogManager = ChangelogManager.createChangelogManager(parent.getDirectoriesManager().getLauncherProperties().useExperimentalBuilds);
             changelogManager.downloadChangelog();
             Platform.runLater(() -> {
                 parent.getStatusBar().setText("Parsing changelog");

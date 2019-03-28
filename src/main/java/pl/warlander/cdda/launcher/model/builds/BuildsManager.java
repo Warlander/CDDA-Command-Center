@@ -11,7 +11,7 @@ public interface BuildsManager {
             return new ExperimentalBuildsManager();
         }
         else {
-            throw new UnsupportedOperationException("Stable builds manager not implemented yet");
+            return new StableBuildsManager();
         }
     }
     
