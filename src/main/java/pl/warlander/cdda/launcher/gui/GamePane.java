@@ -53,6 +53,11 @@ public class GamePane extends VBox {
         currentVersionfieldColumn.setFillWidth(true);
         currentVersionGrid.getColumnConstraints().addAll(currentVersionlabelColumn, currentVersionfieldColumn);
         currentVersionGrid.getChildren().addAll(versionLabel, versionField, buildLabel, buildField);
+        
+        Button launchGameButton = new Button("Launch game");
+        launchGameButton.setPrefWidth(Double.MAX_VALUE);
+        launchGameButton.getStyleClass().add("bigButton");
+        VBox.setMargin(launchGameButton, new Insets(0, 10, 10, 10));
 
         ToggleGroup buildsGroup = new ToggleGroup();
         Label buildsLabel = createGridLabel("Builds: ", 0);
@@ -103,6 +108,7 @@ public class GamePane extends VBox {
         buildsComboBox.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(buildsComboBox, Priority.ALWAYS);
         Button refreshButton = new Button("Refresh");
+        refreshButton.setOnAction((evt) -> updateState());
         HBox buildSelectBox = new HBox(availableBuildsLabel, buildsComboBox, refreshButton);
         buildSelectBox.setSpacing(5);
         buildSelectBox.setPadding(new Insets(5));
@@ -112,7 +118,7 @@ public class GamePane extends VBox {
         buildsChangelogView = new WebView();
         buildsChangelogView.setFontScale(0.75);
 
-        getChildren().addAll(currentVersionGrid, new Separator(), buildsGrid, buildSelectBox, buildsChangelogView);
+        getChildren().addAll(currentVersionGrid, launchGameButton, new Separator(), buildsGrid, buildSelectBox, buildsChangelogView);
         
         updateState();
     }

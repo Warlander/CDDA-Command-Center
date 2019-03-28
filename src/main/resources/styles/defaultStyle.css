@@ -1,4 +1,9 @@
 .undecoratedTextField, .undecoratedTextField:focused {
-    -fx-background-color: transparent ;
-    -fx-background-insets: 0px ;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0px;
+}
+
+.bigButton {
+    -fx-font-size: 20;
+    -fx-font-weight: bold
 }
