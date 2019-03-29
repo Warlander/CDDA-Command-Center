@@ -83,5 +83,10 @@
             <artifactId>commonmark</artifactId>
             <version>0.12.1</version>
         </dependency>
+        <dependency> 
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <version>1.8.0-beta4</version>
+        </dependency>
     </dependencies>
 </project>

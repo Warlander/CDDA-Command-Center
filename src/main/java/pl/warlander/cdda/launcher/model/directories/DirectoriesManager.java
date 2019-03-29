@@ -1,17 +1,10 @@
 package pl.warlander.cdda.launcher.model.directories;
 
 import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

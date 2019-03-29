@@ -8,6 +8,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
 import org.controlsfx.control.StatusBar;
+import org.kamranzafar.jddl.DirectDownloader;
 import pl.warlander.cdda.launcher.model.directories.DirectoriesManager;
 
 public class LauncherPane extends BorderPane {
@@ -23,6 +24,7 @@ public class LauncherPane extends BorderPane {
     
     private final ExecutorService executor;
     
+    private final DirectDownloader downloader;
     private final DirectoriesManager directoriesManager;
     
     public LauncherPane() {
@@ -30,6 +32,7 @@ public class LauncherPane extends BorderPane {
         statusBar = new StatusBar();
         setBottom(statusBar);
         
+        downloader = new DirectDownloader();
         directoriesManager = new DirectoriesManager();
         directoriesManager.initialize();
         
@@ -65,6 +68,10 @@ public class LauncherPane extends BorderPane {
     
     public StatusBar getStatusBar() {
         return statusBar;
+    }
+    
+    public DirectDownloader getDownloader() {
+        return downloader;
     }
     
     public DirectoriesManager getDirectoriesManager() {
