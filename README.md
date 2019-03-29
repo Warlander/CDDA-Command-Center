@@ -4,12 +4,11 @@ New cross-platform launcher for [Cataclysm: Dark Days Ahead](https://github.com/
 This program is in early development stages - not suitable for use yet.
 
 ## Implemented features
-* Checking for unstable releases
+* Checking for stable and unstable releases
+* Updating the game
 
 ## Planned features
 * Launching the game
-* Checking for stable and unstable releases
-* Updating the game
 * Auto-detecting any external modifications of game folders and taking them into account inside launcher
 * Program database containing informations about CDDA mods, soundpacks and tilesets
 * Program database updates not requiring the program update

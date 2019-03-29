@@ -2,6 +2,9 @@ package pl.warlander.cdda.launcher.gui;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
@@ -9,6 +12,8 @@ import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
 import org.controlsfx.control.StatusBar;
 import org.kamranzafar.jddl.DirectDownloader;
+import org.kamranzafar.jddl.DownloadAdaptor;
+import org.kamranzafar.jddl.DownloadTask;
 import pl.warlander.cdda.launcher.model.directories.DirectoriesManager;
 
 public class LauncherPane extends BorderPane {
@@ -57,21 +62,38 @@ public class LauncherPane extends BorderPane {
         return tab;
     }
     
+    public void submitDownload(DownloadTask downloadTask) {
+        downloader.download(downloadTask);
+        submitTask(downloader);
+        AtomicBoolean downloading = new AtomicBoolean(true);
+        downloadTask.addListener(new DownloadAdaptor() {
+            public void onComplete() {
+                downloading.set(false);
+            }
+
+            public void onCancel() {
+                downloading.set(false);
+            }
+        });
+        submitTask(() -> {
+            while (downloading.get()) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException ex) {}
+            }
+        });
+    }
+    
     public void submitTask(Runnable runnable) {
         executor.submit(() -> {
             Platform.runLater(() -> statusBar.setText("Starting new task"));
             runnable.run();
             Platform.runLater(() -> statusBar.setText("Ready"));
         });
-        
     }
     
     public StatusBar getStatusBar() {
         return statusBar;
-    }
-    
-    public DirectDownloader getDownloader() {
-        return downloader;
     }
     
     public DirectoriesManager getDirectoriesManager() {

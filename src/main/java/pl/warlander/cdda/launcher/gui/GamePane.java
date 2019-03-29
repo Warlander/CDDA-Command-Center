@@ -1,10 +1,12 @@
 package pl.warlander.cdda.launcher.gui;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.logging.Level;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
@@ -35,20 +37,20 @@ import pl.warlander.cdda.launcher.model.changelog.ChangelogManager;
 public class GamePane extends VBox {
 
     private static final Logger logger = LoggerFactory.getLogger(GamePane.class);
-    
+
     private static final String UPDATE_GAME_BUTTON_DOWNLOAD_TEXT = "Install selected game version";
     private static final String UPDATE_GAME_BUTTON_CANCEL_TEXT = "Cancel download";
-    
+
     private final LauncherPane parent;
 
     private final TextField versionField;
     private final TextField buildField;
-    
+
     private final Button updateGameButton;
 
     private final ComboBox<BuildData> buildsComboBox;
     private final WebView buildsChangelogView;
-    
+
     private DownloadTask newVersionDownloadTask;
 
     public GamePane(LauncherPane parent) {
@@ -145,35 +147,41 @@ public class GamePane extends VBox {
     }
 
     private void onGameUpdateRequested(ActionEvent evt) {
-        DirectDownloader dd = parent.getDownloader();
         if (newVersionDownloadTask != null) {
             newVersionDownloadTask.setCancelled(true);
             newVersionDownloadTask = null;
             return;
         }
-        
+
         BuildData selectedBuild = buildsComboBox.getValue();
         if (selectedBuild == null) {
             return;
         }
 
-        Path temporaryDownloadFile;
+        File temporaryDownloadFile;
         FileOutputStream temporaryDownloadFileOutput;
         URL downloadURL;
         try {
-            temporaryDownloadFile = Files.createTempFile(null, null);
-            temporaryDownloadFileOutput = new FileOutputStream(temporaryDownloadFile.toFile());
+            temporaryDownloadFile = Files.createTempFile(null, null).toFile();
+            temporaryDownloadFileOutput = new FileOutputStream(temporaryDownloadFile);
             downloadURL = new URL(selectedBuild.getDownloadLink());
         } catch (IOException ex) {
             logger.error("Unable to initialize file download", ex);
             return;
         }
-        
+
         newVersionDownloadTask = createNewVersionDownloadTask(downloadURL, temporaryDownloadFileOutput);
-        dd.download(newVersionDownloadTask);
-        parent.submitTask(dd);
+        
+        parent.submitDownload(newVersionDownloadTask);
+        
+        parent.submitTask(() -> {
+            Platform.runLater(() -> {
+                parent.getStatusBar().setText("Extracting " + selectedBuild.getName());
+            });
+            parent.getDirectoriesManager().extractAndInstallVersion(selectedBuild.getName(), temporaryDownloadFile);
+        });
     }
-    
+
     private DownloadTask createNewVersionDownloadTask(URL downloadURL, FileOutputStream output) {
         return new DownloadTask(downloadURL, output, new DownloadListener() {
             private String fileName;
@@ -209,6 +217,7 @@ public class GamePane extends VBox {
                     enableNodes();
                 });
             }
+
             public void onCancel() {
                 logger.info("File download cancelled: " + fileName);
                 Platform.runLater(() -> {
@@ -299,7 +308,7 @@ public class GamePane extends VBox {
         GridPane.setConstraints(radioButton, column, row);
         return radioButton;
     }
-    
+
     private void disableNodes(Node... exceptions) {
         outer:
         for (Node node : getChildren()) {
@@ -308,11 +317,11 @@ public class GamePane extends VBox {
                     continue outer;
                 }
             }
-            
+
             node.setDisable(true);
         }
     }
-    
+
     private void enableNodes() {
         for (Node node : getChildren()) {
             node.setDisable(false);
