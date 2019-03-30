@@ -38,7 +38,8 @@ public class ExperimentalBuildsManager implements BuildsManager {
             if (!name.startsWith("cataclysmdda")) {
                 continue;
             }
-            name = name.substring(name.lastIndexOf("-") + 1, name.lastIndexOf("."));
+            name = name.substring(name.lastIndexOf("-") + 1);
+            name = name.substring(0, name.indexOf("."));
             String downloadLink = link.attr(("abs:href"));
             
             String dateAndSize = link.nextSibling().outerHtml();
