@@ -15,13 +15,14 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pl.warlander.cdda.launcher.model.builds.BuildData;
 
 public class DirectoriesManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DirectoriesManager.class);
     
     private File rootFolder;
-    private File currentVersionFolder;
+    private File gameFolder;
 
     private File propertiesFile;
     private LauncherProperties launcherProperties;
@@ -30,8 +31,8 @@ public class DirectoriesManager {
         rootFolder = new File("CDDA CC");
         rootFolder.mkdir();
 
-        currentVersionFolder = new File(rootFolder, "Current Version");
-        currentVersionFolder.mkdir();
+        gameFolder = new File(rootFolder, "Game");
+        gameFolder.mkdir();
 
         propertiesFile = new File(rootFolder, "properties.json");
         try {
@@ -44,12 +45,45 @@ public class DirectoriesManager {
         saveProperties();
     }
     
-    public File extractAndInstallVersion(String name, File archiveFile) {
+    public File findCurrentGameExecutable() {
+        File currentGameFolder = findCurrentGameFolder();
+        if (currentGameFolder == null) {
+            return null;
+        }
+        
+        File tilesExecutable = new File(currentGameFolder, "cataclysm-tiles.exe");
+        if (tilesExecutable.exists()) {
+            return tilesExecutable;
+        }
+        
+        File cursesExecutable = new File(currentGameFolder, "cataclysm.exe");
+        if (cursesExecutable.exists()) {
+            return cursesExecutable;
+        }
+        
+        return null;
+    }
+    
+    public File findCurrentGameFolder() {
+        File[] files = gameFolder.listFiles();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                return file;
+            }
+        }
+        
+        return null;
+    }
+    
+    public File extractAndInstallVersion(BuildData data, File archiveFile) {
         try {
             BufferedInputStream bis = new BufferedInputStream(new FileInputStream(archiveFile));
             ArchiveInputStream input = new ArchiveStreamFactory().createArchiveInputStream(bis);
             
-            logger.info("Extracting " + name);
+            String buildString = data.getName() + " " + data.getGraphics();
+            File currentVersionFolder = new File(gameFolder, buildString);
+            
+            logger.info("Extracting " + data.getName());
             ArchiveEntry entry;
             while ((entry = input.getNextEntry()) != null) {
                 if (entry.isDirectory()){
@@ -66,11 +100,11 @@ public class DirectoriesManager {
                 IOUtils.copy(input, new FileOutputStream(curfile));
             }
             
-            logger.info("Extracted " + name);
+            logger.info("Extracted " + data.getName());
             input.close();
             return currentVersionFolder;
         } catch (IOException ex) {
-            logger.error("Unable to extract " + name, ex);
+            logger.error("Unable to extract " + data.getName(), ex);
             return null;
         } catch (ArchiveException ex) {
             logger.error("Unable to determine compression used in downloaded archive", ex);

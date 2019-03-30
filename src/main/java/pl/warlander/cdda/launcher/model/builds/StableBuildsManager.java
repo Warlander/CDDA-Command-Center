@@ -54,7 +54,7 @@ public class StableBuildsManager implements BuildsManager {
             
             DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
             LocalDateTime timestamp = LocalDateTime.parse(timestampString, formatter);
-            builds.add(new BuildData(name, download, timestamp));
+            builds.add(new BuildData(name, graphicsInfix, download, timestamp));
         }
         
         return builds.toArray(new BuildData[builds.size()]);

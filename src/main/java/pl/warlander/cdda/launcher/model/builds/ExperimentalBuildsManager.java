@@ -47,7 +47,7 @@ public class ExperimentalBuildsManager implements BuildsManager {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             LocalDateTime timestamp = LocalDateTime.parse(date, formatter);
             
-            BuildData buildData = new BuildData(name, downloadLink, timestamp);
+            BuildData buildData = new BuildData(name, graphicsFolder, downloadLink, timestamp);
             builds.add(buildData);
         }
         
