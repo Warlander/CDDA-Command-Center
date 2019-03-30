@@ -21,20 +21,22 @@ public class DirectoriesManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DirectoriesManager.class);
     
-    private File rootFolder;
-    private File gameFolder;
+    private final File rootFolder;
+    private final File gameFolder;
 
-    private File propertiesFile;
+    private final File propertiesFile;
     private LauncherProperties launcherProperties;
 
-    public void initialize() {
+    public DirectoriesManager() {
         rootFolder = new File("CDDA CC");
-        rootFolder.mkdir();
-
         gameFolder = new File(rootFolder, "Game");
+        propertiesFile = new File(rootFolder, "properties.json");
+    }
+    
+    public void initialize() {
+        rootFolder.mkdir();
         gameFolder.mkdir();
 
-        propertiesFile = new File(rootFolder, "properties.json");
         try {
             propertiesFile.createNewFile();
         } catch (IOException ex) {
