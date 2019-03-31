@@ -12,6 +12,7 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,9 @@ import pl.warlander.cdda.launcher.model.builds.BuildData;
 public class DirectoriesManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DirectoriesManager.class);
+    
+    private static final String OLD_BACKUP_STRING = "BackupOld";
+    private static final String BACKUP_STRING = "Backup";
     
     private final File rootFolder;
     private final File gameFolder;
@@ -66,15 +70,88 @@ public class DirectoriesManager {
         return null;
     }
     
-    public File findCurrentGameFolder() {
+    public File findOldBackupFolder() {
         File[] files = gameFolder.listFiles();
         for (File file : files) {
-            if (file.isDirectory()) {
+            if (file.isDirectory() && file.getName().endsWith(OLD_BACKUP_STRING)) {
                 return file;
             }
         }
         
         return null;
+    }
+    
+    public File findBackupFolder() {
+        File[] files = gameFolder.listFiles();
+        for (File file : files) {
+            if (file.isDirectory() && file.getName().endsWith(BACKUP_STRING)) {
+                return file;
+            }
+        }
+        
+        return null;
+    }
+    
+    public File findCurrentGameFolder() {
+        File[] files = gameFolder.listFiles();
+        for (File file : files) {
+            String fileName = file.getName();
+            if (file.isDirectory() && !fileName.endsWith(BACKUP_STRING) && !fileName.endsWith(OLD_BACKUP_STRING)) {
+                return file;
+            }
+        }
+        
+        return null;
+    }
+    
+    public File backupCurrentVersion() {
+        logger.info("Starting backup process");
+        File currentGameFolder = findCurrentGameFolder();
+        if (currentGameFolder == null) {
+            logger.info("No game installation found, aborting backup");
+            return null;
+        }
+        
+        File backupFolder = findBackupFolder();
+        if (backupFolder != null) {
+            logger.info("Existing backup found, moving to old backup directory");
+            File oldBackupFolder = findOldBackupFolder();
+            if (oldBackupFolder != null) {
+                logger.info("Removing old backup (this shouldn't happen unless launcher was closed mid-backup previously)");
+                try {
+                    FileUtils.deleteDirectory(oldBackupFolder);
+                } catch (IOException ex) {
+                    logger.error("Unable to remove old backup", ex);
+                    return null;
+                }
+            }
+            oldBackupFolder = new File(backupFolder.getParentFile(), backupFolder.getName().replace(BACKUP_STRING, OLD_BACKUP_STRING));
+            boolean renamed = backupFolder.renameTo(oldBackupFolder);
+            if (!renamed) {
+                logger.error("Unable to move backup to old backup directory");
+                return null;
+            }
+        }
+        
+        logger.info("Creating backup");
+        backupFolder = new File(currentGameFolder.getParentFile(), currentGameFolder.getName() + " " + BACKUP_STRING);
+        boolean renamed = currentGameFolder.renameTo(backupFolder);
+        if (!renamed) {
+            logger.error("Unable to move current game to backup directory");
+            return null;
+        }
+        
+        File oldBackupFolder = findOldBackupFolder();
+        if (oldBackupFolder != null) {
+            logger.info("Removing old backup");
+            try {
+                FileUtils.deleteDirectory(oldBackupFolder);
+            } catch (IOException ex) {
+                logger.error("Unable to remove old backup", ex);
+            }
+        }
+        
+        return backupFolder;
     }
     
     public File extractAndInstallVersion(BuildData data, File archiveFile) {

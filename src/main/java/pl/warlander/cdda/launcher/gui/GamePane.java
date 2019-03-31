@@ -226,9 +226,17 @@ public class GamePane extends VBox {
         
         parent.submitTask(() -> {
             Platform.runLater(() -> {
+                parent.getStatusBar().setText("Making backup of current game version");
+            });
+            File backupFolder = parent.getDirectoriesManager().backupCurrentVersion();
+            if (backupFolder == null) {
+                return;
+            }
+            Platform.runLater(() -> {
                 parent.getStatusBar().setText("Extracting " + selectedBuild.getName());
             });
             parent.getDirectoriesManager().extractAndInstallVersion(selectedBuild, temporaryDownloadFile);
+            temporaryDownloadFile.delete();
             Platform.runLater(() -> {
                 updateComponents();
             });
