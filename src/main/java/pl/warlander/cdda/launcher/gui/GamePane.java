@@ -23,6 +23,9 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.web.WebView;
 import org.controlsfx.tools.Borders;
 import org.controlsfx.tools.Borders.LineBorders;
@@ -49,6 +52,7 @@ public class GamePane extends VBox {
 
     private final TextField buildField;
     private final Button launchGameButton;
+    private final Button restoreBackupButton;
     
     private final RadioButton experimentalBuildsRadio;
     private final RadioButton stableBuildsRadio;
@@ -83,9 +87,16 @@ public class GamePane extends VBox {
 
         launchGameButton = new Button("Launch game");
         launchGameButton.setPrefWidth(Double.MAX_VALUE);
-        launchGameButton.getStyleClass().add("bigButton");
-        VBox.setMargin(launchGameButton, new Insets(0, 10, 10, 10));
+        launchGameButton.getStyleClass().add("hugeButton");
+        VBox.setMargin(launchGameButton, new Insets(0, 10, 0, 10));
         launchGameButton.setOnAction(this::onGameLaunchRequested);
+        
+        restoreBackupButton = new Button("Restore backup");
+        restoreBackupButton.setPrefWidth(Double.MAX_VALUE);
+        restoreBackupButton.setFont(Font.font(Font.getDefault().getName(), FontWeight.BOLD, 12));
+        restoreBackupButton.setTextFill(Color.RED);
+        VBox.setMargin(restoreBackupButton, new Insets(5, 10, 5, 10));
+        restoreBackupButton.setOnAction(this::onGameRestoreRequested);
 
         ToggleGroup buildsGroup = new ToggleGroup();
         Label buildsLabel = createGridLabel("Builds: ", 0);
@@ -108,7 +119,7 @@ public class GamePane extends VBox {
         GridPane buildsGrid = new GridPane();
         buildsGrid.setPadding(new Insets(5, 10, 0, 10));
         buildsGrid.setHgap(5);
-        buildsGrid.setVgap(5);
+        buildsGrid.setVgap(10);
         ColumnConstraints buildsLabelColumn = new ColumnConstraints(60);
         buildsLabelColumn.setHgrow(Priority.ALWAYS);
         ColumnConstraints buildsRadioColumn = new ColumnConstraints(100);
@@ -140,7 +151,7 @@ public class GamePane extends VBox {
         buildsChangelogView.setFontScale(0.75);
         Node changelogWithBorder = Borders.wrap(buildsChangelogView).lineBorder().title("Changelog").buildAll();
 
-        getChildren().addAll(currentVersionGrid, launchGameButton, new Separator(), buildsGrid, buildSelectBox, updateGameButton, changelogWithBorder);
+        getChildren().addAll(currentVersionGrid, launchGameButton, restoreBackupButton, new Separator(), buildsGrid, buildSelectBox, updateGameButton, changelogWithBorder);
         
         updateComponents();
         updateState();
@@ -168,6 +179,9 @@ public class GamePane extends VBox {
             launchGameButton.setText(LAUNCH_BUTTON_INVALID_EXECUTABLE_TEXT);
             launchGameButton.setDisable(true);
         }
+        
+        File backupFolder = parent.getDirectoriesManager().findBackupFolder();
+        restoreBackupButton.setDisable(backupFolder == null);
         
         if (parent.getDirectoriesManager().getLauncherProperties().useExperimentalBuilds) {
             experimentalBuildsRadio.setSelected(true);
@@ -199,6 +213,18 @@ public class GamePane extends VBox {
         } catch (IOException ex) {
             logger.error("Unable to launch the game", ex);
         }
+    }
+    
+    private void onGameRestoreRequested(ActionEvent evt) {
+        parent.submitTask(() -> {
+            Platform.runLater(() -> {
+                parent.getStatusBar().setText("Restoring backup");
+            });
+            parent.getDirectoriesManager().restoreBackup();
+            Platform.runLater(() -> {
+                updateComponents();
+            });
+        });
     }
     
     private void onGameUpdateRequested(ActionEvent evt) {

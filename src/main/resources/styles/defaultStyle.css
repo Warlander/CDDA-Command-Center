@@ -3,7 +3,12 @@
     -fx-background-insets: 0px;
 }
 
+.hugeButton {
+    -fx-font-size: 30;
+    -fx-font-weight: bold;
+}
+
 .bigButton {
     -fx-font-size: 20;
-    -fx-font-weight: bold
+    -fx-font-weight: bold;
 }

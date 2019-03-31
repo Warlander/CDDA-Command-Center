@@ -104,6 +104,35 @@ public class DirectoriesManager {
         return null;
     }
     
+    public boolean restoreBackup() {
+        logger.info("Starting restoration process");
+        File backupFolder = findBackupFolder();
+        if (backupFolder == null) {
+            logger.info("No backup found, aborting restoration");
+            return false;
+        }
+        
+        File currentGameFolder = findCurrentGameFolder();
+        if (currentGameFolder != null) {
+            logger.info("Existing game installation found, deleting");
+            try {
+                FileUtils.deleteDirectory(currentGameFolder);
+            } catch (IOException ex) {
+                logger.error("Unable to delete game installation", ex);
+                return false;
+            }
+        }
+        currentGameFolder = new File(backupFolder.getParentFile(), backupFolder.getName().replace(BACKUP_STRING, "").trim());
+        
+        try {
+            FileUtils.copyDirectory(backupFolder, currentGameFolder);
+        } catch (IOException ex) {
+            logger.error("Unable to restore backup", ex);
+        }
+        
+        return true;
+    }
+    
     public File backupCurrentVersion() {
         logger.info("Starting backup process");
         File currentGameFolder = findCurrentGameFolder();
@@ -117,11 +146,11 @@ public class DirectoriesManager {
             logger.info("Existing backup found, moving to old backup directory");
             File oldBackupFolder = findOldBackupFolder();
             if (oldBackupFolder != null) {
-                logger.info("Removing old backup (this shouldn't happen unless launcher was closed mid-backup previously)");
+                logger.info("Deleting old backup (this shouldn't happen unless launcher was closed mid-backup previously)");
                 try {
                     FileUtils.deleteDirectory(oldBackupFolder);
                 } catch (IOException ex) {
-                    logger.error("Unable to remove old backup", ex);
+                    logger.error("Unable to delete old backup", ex);
                     return null;
                 }
             }
@@ -143,11 +172,11 @@ public class DirectoriesManager {
         
         File oldBackupFolder = findOldBackupFolder();
         if (oldBackupFolder != null) {
-            logger.info("Removing old backup");
+            logger.info("Deleting old backup");
             try {
                 FileUtils.deleteDirectory(oldBackupFolder);
             } catch (IOException ex) {
-                logger.error("Unable to remove old backup", ex);
+                logger.error("Unable to delete old backup", ex);
             }
         }
         
