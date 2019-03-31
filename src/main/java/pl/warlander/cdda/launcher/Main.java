@@ -17,7 +17,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
         LauncherPane root = new LauncherPane();
 
-        Scene scene = new Scene(root, 400, 600);
+        Scene scene = new Scene(root, 500, 800);
         scene.getStylesheets().add("styles/defaultStyle.css");
 
         primaryStage.setTitle(PROGRAM_NAME + " " + PROGRAM_VERSION);

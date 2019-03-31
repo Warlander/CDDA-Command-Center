@@ -9,6 +9,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -16,12 +17,15 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
+import org.controlsfx.tools.Borders;
+import org.controlsfx.tools.Borders.LineBorders;
 import org.kamranzafar.jddl.DownloadListener;
 import org.kamranzafar.jddl.DownloadTask;
 import org.slf4j.Logger;
@@ -102,7 +106,7 @@ public class GamePane extends VBox {
         });
 
         GridPane buildsGrid = new GridPane();
-        buildsGrid.setPadding(new Insets(5));
+        buildsGrid.setPadding(new Insets(5, 10, 0, 10));
         buildsGrid.setHgap(5);
         buildsGrid.setVgap(5);
         ColumnConstraints buildsLabelColumn = new ColumnConstraints(60);
@@ -122,20 +126,21 @@ public class GamePane extends VBox {
         refreshButton.setOnAction((evt) -> updateState());
         HBox buildSelectBox = new HBox(availableBuildsLabel, buildsComboBox, refreshButton);
         buildSelectBox.setSpacing(5);
-        buildSelectBox.setPadding(new Insets(5));
+        buildSelectBox.setPadding(new Insets(5, 10, 5, 10));
         buildSelectBox.setAlignment(Pos.CENTER_LEFT);
         buildSelectBox.setPrefWidth(Double.MAX_VALUE);
 
         updateGameButton = new Button(UPDATE_BUTTON_DOWNLOAD_TEXT);
         updateGameButton.setPrefWidth(Double.MAX_VALUE);
         updateGameButton.getStyleClass().add("bigButton");
-        VBox.setMargin(updateGameButton, new Insets(10, 10, 10, 10));
+        VBox.setMargin(updateGameButton, new Insets(0, 10, 0, 10));
         updateGameButton.setOnAction(this::onGameUpdateRequested);
 
         buildsChangelogView = new WebView();
         buildsChangelogView.setFontScale(0.75);
+        Node changelogWithBorder = Borders.wrap(buildsChangelogView).lineBorder().title("Changelog").buildAll();
 
-        getChildren().addAll(currentVersionGrid, launchGameButton, new Separator(), buildsGrid, buildSelectBox, updateGameButton, buildsChangelogView);
+        getChildren().addAll(currentVersionGrid, launchGameButton, new Separator(), buildsGrid, buildSelectBox, updateGameButton, changelogWithBorder);
         
         updateComponents();
         updateState();
