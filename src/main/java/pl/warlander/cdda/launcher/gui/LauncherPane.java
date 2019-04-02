@@ -16,9 +16,13 @@ import org.controlsfx.glyphfont.GlyphFontRegistry;
 import org.kamranzafar.jddl.DirectDownloader;
 import org.kamranzafar.jddl.DownloadAdaptor;
 import org.kamranzafar.jddl.DownloadTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.warlander.cdda.launcher.model.directories.DirectoriesManager;
 
 public class LauncherPane extends BorderPane {
+    
+    private static final Logger logger = LoggerFactory.getLogger(LauncherPane.class);
     
     private final TabPane tabPane;
     private final StatusBar statusBar;
@@ -101,7 +105,12 @@ public class LauncherPane extends BorderPane {
     public void submitTask(Runnable runnable) {
         executor.submit(() -> {
             Platform.runLater(() -> statusBar.setText("Starting new task"));
-            runnable.run();
+            try {
+                runnable.run();
+            } catch (Exception ex) {
+                logger.error("Error occured while executing parallel task", ex);
+            }
+            
             Platform.runLater(() -> statusBar.setText("Ready"));
         });
     }

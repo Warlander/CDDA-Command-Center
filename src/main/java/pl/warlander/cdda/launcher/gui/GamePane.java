@@ -7,7 +7,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
@@ -29,6 +29,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.web.WebView;
+import org.apache.commons.io.FileUtils;
 import org.controlsfx.tools.Borders;
 import org.kamranzafar.jddl.DownloadListener;
 import org.kamranzafar.jddl.DownloadTask;
@@ -37,6 +38,9 @@ import org.slf4j.LoggerFactory;
 import pl.warlander.cdda.launcher.model.builds.BuildData;
 import pl.warlander.cdda.launcher.model.builds.BuildsManager;
 import pl.warlander.cdda.launcher.model.changelog.ChangelogManager;
+import pl.warlander.cdda.launcher.model.directories.GameModInfo;
+import pl.warlander.cdda.launcher.model.directories.LauncherModInfo;
+import pl.warlander.cdda.launcher.model.mods.ModType;
 import pl.warlander.cdda.launcher.utils.TimeUtils;
 
 public class GamePane extends VBox {
@@ -173,7 +177,6 @@ public class GamePane extends VBox {
         
         if (currentGameFolder != null) {
             LocalDateTime time = LocalDateTime.ofEpochSecond(currentGameFolder.lastModified() / 1000, 0, ZoneOffset.UTC);
-            System.out.println(time.toString());
             updatedField.setText(time.toString().replace("T", " ") + " (" + TimeUtils.timestampToNowString(time) + ")");
         }
         else {
@@ -270,22 +273,88 @@ public class GamePane extends VBox {
         parent.submitDownload(newVersionDownloadTask);
         
         parent.submitTask(() -> {
-            Platform.runLater(() -> {
-                parent.getStatusBar().setText("Making backup of current game version");
-            });
-            File backupFolder = parent.getDirectoriesManager().backupCurrentVersion();
-            if (backupFolder == null) {
-                return;
+            if (parent.getDirectoriesManager().findCurrentGameFolder() != null) {
+                backupGame();
+                if (parent.getDirectoriesManager().findBackupFolder() == null) {
+                    logger.warn("No backup found, aborting update");
+                    return;
+                }
             }
-            Platform.runLater(() -> {
-                parent.getStatusBar().setText("Extracting " + selectedBuild.getName());
-            });
-            parent.getDirectoriesManager().extractAndInstallVersion(selectedBuild, temporaryDownloadFile);
-            temporaryDownloadFile.delete();
+            extractGame(selectedBuild, temporaryDownloadFile);
+            copyMods();
+            updateModsInfo();
+            
             Platform.runLater(() -> {
                 updateComponents();
             });
         });
+    }
+    
+    private void backupGame() {
+        Platform.runLater(() -> {
+            parent.getStatusBar().setText("Making backup of current game version");
+        });
+        parent.getDirectoriesManager().backupCurrentVersion();
+    }
+    
+    private void extractGame(BuildData selectedBuild, File downloadedFile) {
+        Platform.runLater(() -> {
+            parent.getStatusBar().setText("Extracting " + selectedBuild.getName());
+        });
+        parent.getDirectoriesManager().extractAndInstallVersion(selectedBuild, downloadedFile);
+        downloadedFile.delete();
+    }
+    
+    private void copyMods() {
+        Platform.runLater(() -> {
+            parent.getStatusBar().setText("Copying mods");
+        });
+        
+        File currentGameFolder = parent.getDirectoriesManager().findCurrentGameFolder();
+        File backupFolder = parent.getDirectoriesManager().findCurrentGameFolder();
+        
+        GameModInfo[] newMods = parent.getDirectoriesManager().findMods(currentGameFolder);
+        GameModInfo[] oldMods = parent.getDirectoriesManager().findMods(backupFolder);
+        
+        outer:
+        for (GameModInfo oldMod : oldMods) {
+            for (GameModInfo newMod : newMods) {
+                if (newMod.getName().equals(oldMod.getName())) {
+                    // new or same version of mainlined mod found, no action needed
+                    continue outer;
+                }
+            }
+            
+            try {
+                FileUtils.copyDirectory(oldMod.getFolder(), new File(currentGameFolder, oldMod.getFolder().getName()));
+            } catch (IOException ex) {
+                logger.error("Unable to copy mod " + oldMod.getName(), ex);
+            }
+        }
+    }
+    
+    private void updateModsInfo() {
+        Platform.runLater(() -> {
+            parent.getStatusBar().setText("Updating mods info");
+        });
+        
+        File currentGameFolder = parent.getDirectoriesManager().findCurrentGameFolder();
+        GameModInfo[] newMods = parent.getDirectoriesManager().findMods(currentGameFolder);
+        LauncherModInfo[] oldLauncherMods = parent.getDirectoriesManager().loadLauncherModsInfo();
+        ArrayList<LauncherModInfo> updatedLauncherMods = new ArrayList();
+        
+        outer:
+        for (GameModInfo newMod : newMods) {
+            for (LauncherModInfo launcherMod : oldLauncherMods) {
+                if (launcherMod.getFolderName().equals(newMod.getFolder().getName())) {
+                    updatedLauncherMods.add(launcherMod);
+                    continue outer;
+                }
+            }
+            updatedLauncherMods.add(new LauncherModInfo(newMod.getFolder().getName(), ModType.MAINLINED));
+        }
+        
+        parent.getDirectoriesManager().saveLauncherModsInfo(updatedLauncherMods.toArray(LauncherModInfo[]::new));
     }
 
     private DownloadTask createNewVersionDownloadTask(URL downloadURL, FileOutputStream output) {

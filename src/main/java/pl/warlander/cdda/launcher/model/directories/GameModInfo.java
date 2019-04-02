@@ -2,14 +2,14 @@ package pl.warlander.cdda.launcher.model.directories;
 
 import java.io.File;
 
-public class ModInfo {
+public class GameModInfo {
     
     private final File folder;
     private final String name;
     private final String category;
     private final String description;
     
-    public ModInfo(File folder, String name, String category, String description) {
+    public GameModInfo(File folder, String name, String category, String description) {
         this.folder = folder;
         this.name = name;
         this.category = category;

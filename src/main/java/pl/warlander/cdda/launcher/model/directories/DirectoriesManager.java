@@ -35,11 +35,14 @@ public class DirectoriesManager {
 
     private final File propertiesFile;
     private LauncherProperties launcherProperties;
+    
+    private final File modsFile;
 
     public DirectoriesManager() {
         rootFolder = new File("CDDA CC");
         gameFolder = new File(rootFolder, "Game");
         propertiesFile = new File(rootFolder, "properties.json");
+        modsFile = new File(rootFolder, "mods.json");
     }
     
     public void initialize() {
@@ -51,19 +54,25 @@ public class DirectoriesManager {
         } catch (IOException ex) {
             logger.error("Unable to create properties file", ex);
         }
+        
+        try {
+            modsFile.createNewFile();
+        } catch (IOException ex) {
+            logger.error("Unable to create mods file", ex);
+        }
 
         loadProperties();
         saveProperties();
     }
     
-    public ModInfo[] findMods(File gameRootDirectory) {
+    public GameModInfo[] findMods(File gameRootDirectory) {
         File modsDirectory = new File(gameRootDirectory, "data/mods");
         
         if (!modsDirectory.exists()) {
-            return new ModInfo[0];
+            return new GameModInfo[0];
         }
         
-        ArrayList<ModInfo> mods = new ArrayList();
+        ArrayList<GameModInfo> mods = new ArrayList();
         for (File modDirectory : modsDirectory.listFiles()) {
             File modInfoFile = new File(modDirectory, "modinfo.json");
             if (!modInfoFile.exists()) {
@@ -79,13 +88,13 @@ public class DirectoriesManager {
                 JsonElement categoryElement = modInfoObject.get("category");
                 String category = categoryElement == null ? "no category" : categoryElement.getAsString();
                 String description = modInfoObject.get("description").getAsString();
-                mods.add(new ModInfo(modDirectory, name, category, description));
+                mods.add(new GameModInfo(modDirectory, name, category, description));
             } catch (IOException ex) {
                 logger.error("Unable to read mod info", ex);
             }
         }
         
-        return mods.toArray(ModInfo[]::new);
+        return mods.toArray(GameModInfo[]::new);
     }
     
     public File findCurrentGameExecutable() {
@@ -285,6 +294,33 @@ public class DirectoriesManager {
 
     public LauncherProperties getLauncherProperties() {
         return launcherProperties;
+    }
+    
+    public LauncherModInfo[] loadLauncherModsInfo() {
+        Gson gson = new Gson();
+        try {
+            FileReader reader = new FileReader(modsFile);
+            LauncherModInfo[] modsInfo = gson.fromJson(reader, LauncherModInfo[].class);
+            reader.close();
+            if (modsInfo == null) {
+                return new LauncherModInfo[0];
+            }
+            return modsInfo;
+        } catch (IOException ex) {
+            logger.error("Unable to load launcher mods info", ex);
+            return new LauncherModInfo[0];
+        }
+    }
+    
+    public void saveLauncherModsInfo(LauncherModInfo[] modsInfo) {
+        Gson gson = new Gson();
+        try {
+            FileWriter writer = new FileWriter(modsFile);
+            writer.write(gson.toJson(modsInfo));
+            writer.close();
+        } catch (IOException ex) {
+            logger.error("Unable to save launcher mods info", ex);
+        }
     }
 
 }
