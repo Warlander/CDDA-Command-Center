@@ -17,7 +17,6 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -28,7 +27,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.web.WebView;
 import org.controlsfx.tools.Borders;
-import org.controlsfx.tools.Borders.LineBorders;
 import org.kamranzafar.jddl.DownloadListener;
 import org.kamranzafar.jddl.DownloadTask;
 import org.slf4j.Logger;
@@ -104,7 +102,7 @@ public class GamePane extends VBox {
         stableBuildsRadio = createGridRadioButton("Stable", buildsGroup, 2, 0);
         experimentalBuildsRadio.selectedProperty().addListener((ov, oldValue, newValue) -> {
             parent.getDirectoriesManager().getLauncherProperties().useExperimentalBuilds = newValue;
-            updateState();
+            refreshBuilds();
         });
 
         ToggleGroup graphicsGroup = new ToggleGroup();
@@ -113,7 +111,7 @@ public class GamePane extends VBox {
         cursesGraphicsRadio = createGridRadioButton("Curses", graphicsGroup, 2, 1);
         tilesGraphicsRadio.selectedProperty().addListener((ov, oldValue, newValue) -> {
             parent.getDirectoriesManager().getLauncherProperties().useTilesBuilds = newValue;
-            updateState();
+            refreshBuilds();
         });
 
         GridPane buildsGrid = new GridPane();
@@ -134,7 +132,7 @@ public class GamePane extends VBox {
         buildsComboBox.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(buildsComboBox, Priority.ALWAYS);
         Button refreshButton = new Button("Refresh");
-        refreshButton.setOnAction((evt) -> updateState());
+        refreshButton.setOnAction((evt) -> refreshBuilds());
         HBox buildSelectBox = new HBox(availableBuildsLabel, buildsComboBox, refreshButton);
         buildSelectBox.setSpacing(5);
         buildSelectBox.setPadding(new Insets(5, 10, 5, 10));
@@ -154,7 +152,7 @@ public class GamePane extends VBox {
         getChildren().addAll(currentVersionGrid, launchGameButton, restoreBackupButton, new Separator(), buildsGrid, buildSelectBox, updateGameButton, changelogWithBorder);
         
         updateComponents();
-        updateState();
+        refreshBuilds();
     }
     
     private void updateComponents() {
@@ -322,8 +320,9 @@ public class GamePane extends VBox {
         });
     }
 
-    private void updateState() {
+    private void refreshBuilds() {
         launchGameButton.setDisable(true);
+        restoreBackupButton.setDisable(true);
         parent.submitTask(() -> {
             updateBuilds();
             updateChangelog();

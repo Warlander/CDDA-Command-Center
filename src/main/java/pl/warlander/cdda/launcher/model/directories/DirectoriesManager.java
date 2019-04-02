@@ -1,6 +1,9 @@
 package pl.warlander.cdda.launcher.model.directories;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,6 +11,8 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -49,6 +54,38 @@ public class DirectoriesManager {
 
         loadProperties();
         saveProperties();
+    }
+    
+    public ModInfo[] findMods(File gameRootDirectory) {
+        File modsDirectory = new File(gameRootDirectory, "data/mods");
+        
+        if (!modsDirectory.exists()) {
+            return new ModInfo[0];
+        }
+        
+        ArrayList<ModInfo> mods = new ArrayList();
+        for (File modDirectory : modsDirectory.listFiles()) {
+            File modInfoFile = new File(modDirectory, "modinfo.json");
+            if (!modInfoFile.exists()) {
+                continue;
+            }
+            
+            Gson gson = new Gson();
+            try {
+                String modInfoString = FileUtils.readFileToString(modInfoFile, Charset.defaultCharset());
+                JsonArray modInfoArray = gson.fromJson(modInfoString, JsonArray.class);
+                JsonObject modInfoObject = modInfoArray.get(0).getAsJsonObject();
+                String name = modInfoObject.get("name").getAsString();
+                JsonElement categoryElement = modInfoObject.get("category");
+                String category = categoryElement == null ? "no category" : categoryElement.getAsString();
+                String description = modInfoObject.get("description").getAsString();
+                mods.add(new ModInfo(modDirectory, name, category, description));
+            } catch (IOException ex) {
+                logger.error("Unable to read mod info", ex);
+            }
+        }
+        
+        return mods.toArray(ModInfo[]::new);
     }
     
     public File findCurrentGameExecutable() {

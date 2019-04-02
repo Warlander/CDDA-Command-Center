@@ -49,7 +49,7 @@ public class LauncherPane extends BorderPane {
         gamePane = new GamePane(this);
         Glyph gamePaneGlyph = fontAwesome.create(FontAwesome.Glyph.GAMEPAD);
         Tab game = createTab("Game", gamePaneGlyph, gamePane);
-        modsPane = new ModsPane();
+        modsPane = new ModsPane(this);
         Glyph modsPaneGlyph = fontAwesome.create(FontAwesome.Glyph.PUZZLE_PIECE);
         Tab mods = createTab("Mods", modsPaneGlyph, modsPane);
         tilesetsPane = new TilesetsPane();
