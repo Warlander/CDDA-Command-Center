@@ -5,6 +5,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
@@ -34,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import pl.warlander.cdda.launcher.model.builds.BuildData;
 import pl.warlander.cdda.launcher.model.builds.BuildsManager;
 import pl.warlander.cdda.launcher.model.changelog.ChangelogManager;
+import pl.warlander.cdda.launcher.utils.TimeUtils;
 
 public class GamePane extends VBox {
 
@@ -49,6 +53,7 @@ public class GamePane extends VBox {
     private final LauncherPane parent;
 
     private final TextField buildField;
+    private final TextField updatedField;
     private final Button launchGameButton;
     private final Button restoreBackupButton;
     
@@ -70,18 +75,20 @@ public class GamePane extends VBox {
 
         Label buildLabel = createGridLabel("Build:", 0);
         buildField = createGridTextField(0);
+        Label updatedLabel = createGridLabel("Installed on:", 1);
+        updatedField = createGridTextField(1);
 
         GridPane currentVersionGrid = new GridPane();
         currentVersionGrid.setPadding(new Insets(5));
         currentVersionGrid.setHgap(5);
         currentVersionGrid.setVgap(5);
-        ColumnConstraints currentVersionlabelColumn = new ColumnConstraints(60);
+        ColumnConstraints currentVersionlabelColumn = new ColumnConstraints(80);
         currentVersionlabelColumn.setHgrow(Priority.ALWAYS);
         ColumnConstraints currentVersionfieldColumn = new ColumnConstraints();
         currentVersionfieldColumn.setHgrow(Priority.ALWAYS);
         currentVersionfieldColumn.setFillWidth(true);
         currentVersionGrid.getColumnConstraints().addAll(currentVersionlabelColumn, currentVersionfieldColumn);
-        currentVersionGrid.getChildren().addAll(buildLabel, buildField);
+        currentVersionGrid.getChildren().addAll(updatedLabel, updatedField, buildLabel, buildField);
 
         launchGameButton = new Button("Launch game");
         launchGameButton.setPrefWidth(Double.MAX_VALUE);
@@ -162,6 +169,15 @@ public class GamePane extends VBox {
         }
         else {
             buildField.setText("No game detected");
+        }
+        
+        if (currentGameFolder != null) {
+            LocalDateTime time = LocalDateTime.ofEpochSecond(currentGameFolder.lastModified() / 1000, 0, ZoneOffset.UTC);
+            System.out.println(time.toString());
+            updatedField.setText(time.toString().replace("T", " ") + " (" + TimeUtils.timestampToNowString(time) + ")");
+        }
+        else {
+            updatedField.setText("No game detected");
         }
         
         File currentGameExecutable = parent.getDirectoriesManager().findCurrentGameExecutable();
