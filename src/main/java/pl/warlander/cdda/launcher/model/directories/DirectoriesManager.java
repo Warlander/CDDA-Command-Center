@@ -1,6 +1,7 @@
 package pl.warlander.cdda.launcher.model.directories;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -282,7 +283,7 @@ public class DirectoriesManager {
     }
 
     public void saveProperties() {
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try {
             FileWriter writer = new FileWriter(propertiesFile);
             writer.write(gson.toJson(launcherProperties));
@@ -313,7 +314,7 @@ public class DirectoriesManager {
     }
     
     public void saveLauncherModsInfo(LauncherModInfo[] modsInfo) {
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try {
             FileWriter writer = new FileWriter(modsFile);
             writer.write(gson.toJson(modsInfo));
