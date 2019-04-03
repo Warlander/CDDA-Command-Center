@@ -281,6 +281,7 @@ public class GamePane extends VBox {
                 }
             }
             extractGame(selectedBuild, temporaryDownloadFile);
+            copySaves();
             copyMods();
             updateModsInfo();
             
@@ -303,6 +304,47 @@ public class GamePane extends VBox {
         });
         parent.getDirectoriesManager().extractAndInstallVersion(selectedBuild, downloadedFile);
         downloadedFile.delete();
+    }
+    
+    private void copySaves() {
+        File backupFolder = parent.getDirectoriesManager().findBackupFolder();
+        File currentFolder = parent.getDirectoriesManager().findCurrentGameFolder();
+        
+        Platform.runLater(() -> {
+            parent.getStatusBar().setText("Copying memorial");
+        });
+        
+        File backupMemorial = parent.getDirectoriesManager().findMemorialFolder(backupFolder);
+        File currentMemorial = parent.getDirectoriesManager().findMemorialFolder(currentFolder);
+        try {
+            FileUtils.copyDirectory(backupMemorial, currentMemorial);
+        } catch (IOException ex) {
+            logger.error("Unable to copy memorial", ex);
+        }
+        
+        Platform.runLater(() -> {
+            parent.getStatusBar().setText("Copying graveyard");
+        });
+        
+        File backupGraveyard = parent.getDirectoriesManager().findGraveyardFolder(backupFolder);
+        File currentGraveyard = parent.getDirectoriesManager().findGraveyardFolder(currentFolder);
+        try {
+            FileUtils.copyDirectory(backupGraveyard, currentGraveyard);
+        } catch (IOException ex) {
+            logger.error("Unable to copy graveyard", ex);
+        }
+        
+        Platform.runLater(() -> {
+            parent.getStatusBar().setText("Copying saves");
+        });
+        
+        File backupSaves = parent.getDirectoriesManager().findSavesFolder(backupFolder);
+        File currentSaves = parent.getDirectoriesManager().findSavesFolder(currentFolder);
+        try {
+            FileUtils.copyDirectory(backupSaves, currentSaves);
+        } catch (IOException ex) {
+            logger.error("Unable to copy saves", ex);
+        }
     }
     
     private void copyMods() {

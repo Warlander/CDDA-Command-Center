@@ -66,6 +66,18 @@ public class DirectoriesManager {
         saveProperties();
     }
     
+    public File findMemorialFolder(File gameRootDirectory) {
+        return new File(gameRootDirectory, "memorial");
+    }
+    
+    public File findSavesFolder(File gameRootDirectory) {
+        return new File(gameRootDirectory, "save");
+    }
+    
+    public File findGraveyardFolder(File gameRootDirectory) {
+        return new File(gameRootDirectory, "graveyard");
+    }
+    
     public GameModInfo[] findMods(File gameRootDirectory) {
         File modsDirectory = new File(gameRootDirectory, "data/mods");
         
