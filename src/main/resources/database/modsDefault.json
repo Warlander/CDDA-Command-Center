@@ -1,0 +1,7 @@
+{
+    "_comment": "Please refer to https://github.com/Warlander/CDDA-Command-Center/wiki/JSON-API-Documentation for API info. default mods database, will be overwritten with version from server if automatic updates are enabled. Please make a pull request to application mods database if you want to add your mod to the launcher (or create another json file in this directory if you want to add custom changes)",
+    "apiVersion": 1,
+    "mods": [
+        
+    ]
+}
