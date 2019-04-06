@@ -1,33 +1,47 @@
 {
     "_comment": "Please refer to https://github.com/Warlander/CDDA-Command-Center/wiki/JSON-API-Documentation for API info. This database file is automatically overwritten with version from server if automatic updates are enabled, unless location is removed/set to '' or type is set to 'none'",
     "apiVersion": 1,
-    "type": "none",
-    "location": "",
+    "resource": {
+        "type": "none",
+        "location": ""
+    },
     "mods": [
         {
             "name": "modsDefault.json",
-            "type": "none",
-            "location": "",
-            "defaultType": "jar",
-            "defaultLocation": "/database/modsDefault.json"
+            "resource": {
+                "type": "none",
+                "location": ""
+            },
+            "defaultResource": {
+                "type": "jar",
+                "location": "/database/modsDefault.json"
+            }
         }
     ],
     "soundpacks": [
         {
             "name": "soundpacksDefault.json",
-            "type": "none",
-            "location": "",
-            "defaultType": "jar",
-            "defaultLocation": "/database/soundpacksDefault.json"
+            "resource": {
+                "type": "none",
+                "location": ""
+            },
+            "defaultResource": {
+                "type": "jar",
+                "location": "/database/soundpacksDefault.json"
+            }
         }
     ],
     "tilesets": [
         {
             "name": "tilesetsDefault.json",
-            "type": "none",
-            "location": "",
-            "defaultType": "jar",
-            "defaultLocation": "/database/tilesetsDefault.json"
+            "resource": {
+                "type": "none",
+                "location": ""
+            },
+            "defaultResource": {
+                "type": "jar",
+                "location": "/database/tilesetsDefault.json"
+            }
         }
     ]
 }
