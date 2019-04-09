@@ -8,10 +8,13 @@ import com.google.gson.JsonObject;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -23,6 +26,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.warlander.cdda.launcher.model.builds.BuildData;
+import pl.warlander.cdda.launcher.model.database.DatabaseLocations;
 
 public class DirectoriesManager {
 
@@ -33,17 +37,25 @@ public class DirectoriesManager {
     
     private final File rootFolder;
     private final File gameFolder;
+    private final File databaseFolder;
 
     private final File propertiesFile;
     private LauncherProperties launcherProperties;
     
     private final File modsFile;
+    
+    private final URL defaultDatabaseLocationsUrl;
+    private final File databaseLocationsFile;
+    private DatabaseLocations databaseLocations;
 
     public DirectoriesManager() {
         rootFolder = new File("CDDA CC");
         gameFolder = new File(rootFolder, "Game");
+        databaseFolder = new File(rootFolder, "Database");
         propertiesFile = new File(rootFolder, "properties.json");
         modsFile = new File(rootFolder, "mods.json");
+        databaseLocationsFile = new File(databaseFolder, "databaseLocations.json");
+        defaultDatabaseLocationsUrl = getClass().getResource("/database/databaseLocations.json");
     }
     
     public void initialize() {
@@ -64,6 +76,8 @@ public class DirectoriesManager {
 
         loadProperties();
         saveProperties();
+        
+        reloadDatabase();
     }
     
     public File findMemorialFolder(File gameRootDirectory) {
@@ -161,6 +175,23 @@ public class DirectoriesManager {
         }
         
         return null;
+    }
+    
+    private void reloadDatabase() {
+        if (!databaseLocationsFile.exists()) {
+            try {
+                FileUtils.copyURLToFile(defaultDatabaseLocationsUrl, databaseLocationsFile);
+            } catch (IOException ex) {
+                logger.error("Unable to copy the default database to target file", ex);
+            }
+        }
+        
+        try (FileReader reader = new FileReader(databaseLocationsFile)) {
+            Gson gson = new Gson();
+            databaseLocations = gson.fromJson(reader, DatabaseLocations.class);
+        } catch (IOException ex) {
+            logger.error("Unable to read database locations file", ex);
+        }
     }
     
     public boolean restoreBackup() {
@@ -304,10 +335,6 @@ public class DirectoriesManager {
             logger.error("Unable to save properties", ex);
         }
     }
-
-    public LauncherProperties getLauncherProperties() {
-        return launcherProperties;
-    }
     
     public LauncherModInfo[] loadLauncherModsInfo() {
         Gson gson = new Gson();
@@ -334,6 +361,10 @@ public class DirectoriesManager {
         } catch (IOException ex) {
             logger.error("Unable to save launcher mods info", ex);
         }
+    }
+    
+    public LauncherProperties getLauncherProperties() {
+        return launcherProperties;
     }
 
 }
