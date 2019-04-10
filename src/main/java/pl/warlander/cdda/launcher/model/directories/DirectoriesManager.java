@@ -78,6 +78,10 @@ public class DirectoriesManager {
         reloadDatabase();
     }
     
+    public File findTemplatesFolder(File gameRootDirectory) {
+        return new File(gameRootDirectory, "templates");
+    }
+    
     public File findMemorialFolder(File gameRootDirectory) {
         return new File(gameRootDirectory, "memorial");
     }
