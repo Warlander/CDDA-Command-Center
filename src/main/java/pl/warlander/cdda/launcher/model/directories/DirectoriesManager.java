@@ -8,12 +8,10 @@ import com.google.gson.JsonObject;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -175,6 +173,21 @@ public class DirectoriesManager {
         }
         
         return null;
+    }
+    
+    public void updateDatabase() {
+        URL resourceUrl = databaseLocations.getResource().getAsURL();
+        if (resourceUrl == null) {
+            logger.warn("Unable to update database due to empty resource URL");
+            return;
+        }
+        
+        try {
+            FileUtils.copyURLToFile(resourceUrl, databaseLocationsFile, 1000, 1000);
+            reloadDatabase();
+        } catch (IOException ex) {
+            logger.error("Unable to download updated database", ex);
+        }
     }
     
     private void reloadDatabase() {

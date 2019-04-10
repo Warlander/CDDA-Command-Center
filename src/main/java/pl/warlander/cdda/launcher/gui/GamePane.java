@@ -164,6 +164,13 @@ public class GamePane extends VBox {
         
         updateComponents();
         refreshBuilds();
+        
+        if (parent.getDirectoriesManager().getLauncherProperties().updateDatabase) {
+            parent.submitTask(() -> {
+                Platform.runLater(() -> parent.getStatusBar().setText("Updating database"));
+                parent.getDirectoriesManager().updateDatabase();
+            });
+        }
     }
     
     private void updateComponents() {

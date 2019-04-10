@@ -2,8 +2,8 @@
     "_comment": "Please refer to https://github.com/Warlander/CDDA-Command-Center/wiki/JSON-API-Documentation for API info. This database file is automatically overwritten with version from server if automatic updates are enabled, unless location is removed/set to '' or type is set to 'none'",
     "apiVersion": 1,
     "resource": {
-        "type": "none",
-        "location": ""
+        "type": "github",
+        "location": "https://github.com/Warlander/CDDA-Command-Center/blob/master/src/main/resources/database/databaseLocations.json"
     },
     "mods": [
         {
