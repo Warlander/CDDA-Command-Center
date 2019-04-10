@@ -24,6 +24,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.warlander.cdda.launcher.model.builds.BuildData;
+import pl.warlander.cdda.launcher.model.database.DatabaseFileLocation;
 import pl.warlander.cdda.launcher.model.database.DatabaseLocations;
 
 public class DirectoriesManager {
@@ -189,8 +190,25 @@ public class DirectoriesManager {
         try {
             FileUtils.copyURLToFile(resourceUrl, databaseLocationsFile, 1000, 1000);
             reloadDatabase();
+            
+            updateDatabases(databaseLocations.getMods());
+            updateDatabases(databaseLocations.getSoundpacks());
+            updateDatabases(databaseLocations.getTilesets());
         } catch (IOException ex) {
             logger.error("Unable to download updated database", ex);
+            return;
+        }
+    }
+    
+    private void updateDatabases(DatabaseFileLocation[] databaseLocations) {
+        for (DatabaseFileLocation databaseLocation : databaseLocations) {
+            File databaseFile = new File(databaseFolder, databaseLocation.getName());
+            
+            try {
+                FileUtils.copyURLToFile(databaseLocation.getResource().getAsURL(), databaseFile);
+            } catch (IOException ex) {
+                logger.error("Unable to copy " + databaseLocation.getName(), ex);
+            }
         }
     }
     
@@ -208,6 +226,25 @@ public class DirectoriesManager {
             databaseLocations = gson.fromJson(reader, DatabaseLocations.class);
         } catch (IOException ex) {
             logger.error("Unable to read database locations file", ex);
+        }
+        
+        reloadDatabases(databaseLocations.getMods());
+        reloadDatabases(databaseLocations.getSoundpacks());
+        reloadDatabases(databaseLocations.getTilesets());
+    }
+    
+    private void reloadDatabases(DatabaseFileLocation[] databaseLocations) {
+        for (DatabaseFileLocation databaseLocation : databaseLocations) {
+            File databaseFile = new File(databaseFolder, databaseLocation.getName());
+            if (databaseFile.exists()) {
+                continue;
+            }
+            
+            try {
+                FileUtils.copyURLToFile(databaseLocation.getDefaultResource().getAsURL(), databaseFile);
+            } catch (IOException ex) {
+                logger.error("Unable to copy " + databaseLocation.getName(), ex);
+            }
         }
     }
     
