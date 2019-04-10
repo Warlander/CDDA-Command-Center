@@ -288,8 +288,11 @@ public class GamePane extends VBox {
                 }
             }
             extractGame(selectedBuild, temporaryDownloadFile);
-            copySaves();
-            copyMods();
+            if (parent.getDirectoriesManager().findBackupFolder() != null) {
+                copySaves();
+                copyMods();
+            }
+            
             updateModsInfo();
             
             Platform.runLater(() -> {
