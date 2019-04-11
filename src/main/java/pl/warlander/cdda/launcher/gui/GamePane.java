@@ -345,7 +345,7 @@ public class GamePane extends VBox {
         }
         
         Platform.runLater(() -> {
-            parent.getStatusBar().setText("Copying saves");
+            parent.getStatusBar().setText("Copying templates");
         });
         
         File backupTemplates = parent.getDirectoriesManager().findTemplatesFolder(backupFolder);
@@ -353,8 +353,24 @@ public class GamePane extends VBox {
         try {
             FileUtils.copyDirectory(backupTemplates, currentTemplates);
         } catch (IOException ex) {
-            logger.error("Unable to copy saves", ex);
+            logger.error("Unable to copy templates", ex);
         }
+        
+        Platform.runLater(() -> {
+            parent.getStatusBar().setText("Copying config");
+        });
+        
+        File backupConfig = parent.getDirectoriesManager().findConfigFolder(backupFolder);
+        File currentConfig = parent.getDirectoriesManager().findConfigFolder(currentFolder);
+        try {
+            FileUtils.copyDirectory(backupConfig, currentConfig);
+        } catch (IOException ex) {
+            logger.error("Unable to copy templates", ex);
+        }
+        
+        Platform.runLater(() -> {
+            parent.getStatusBar().setText("Copying saves");
+        });
         
         File backupSaves = parent.getDirectoriesManager().findSavesFolder(backupFolder);
         File currentSaves = parent.getDirectoriesManager().findSavesFolder(currentFolder);

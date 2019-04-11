@@ -79,6 +79,10 @@ public class DirectoriesManager {
         reloadDatabase();
     }
     
+    public File findConfigFolder(File gameRootDirectory) {
+        return new File(gameRootDirectory, "config");
+    }
+    
     public File findTemplatesFolder(File gameRootDirectory) {
         return new File(gameRootDirectory, "templates");
     }
