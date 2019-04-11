@@ -34,32 +34,32 @@ public class DirectoriesManager {
     private static final String OLD_BACKUP_STRING = "BackupOld";
     private static final String BACKUP_STRING = "Backup";
     
-    private final File rootFolder;
-    private final File gameFolder;
-    private final File databaseFolder;
-
+    private final File rootDirectory;
+    
     private final File propertiesFile;
     private LauncherProperties launcherProperties;
-    
     private final File modsFile;
     
+    private final File gameDirectory;
+    
+    private final File databaseDirectory;
     private final URL defaultDatabaseLocationsUrl;
     private final File databaseLocationsFile;
     private DatabaseLocations databaseLocations;
 
     public DirectoriesManager() {
-        rootFolder = new File("CDDA CC");
-        gameFolder = new File(rootFolder, "Game");
-        databaseFolder = new File(rootFolder, "Database");
-        propertiesFile = new File(rootFolder, "properties.json");
-        modsFile = new File(rootFolder, "mods.json");
-        databaseLocationsFile = new File(databaseFolder, "databaseLocations.json");
+        rootDirectory = new File("CDDA CC");
+        gameDirectory = new File(rootDirectory, "Game");
+        databaseDirectory = new File(rootDirectory, "Database");
+        propertiesFile = new File(rootDirectory, "properties.json");
+        modsFile = new File(rootDirectory, "mods.json");
+        databaseLocationsFile = new File(databaseDirectory, "databaseLocations.json");
         defaultDatabaseLocationsUrl = getClass().getResource("/database/databaseLocations.json");
     }
     
     public void initialize() {
-        rootFolder.mkdir();
-        gameFolder.mkdir();
+        rootDirectory.mkdir();
+        gameDirectory.mkdir();
 
         try {
             propertiesFile.createNewFile();
@@ -79,105 +79,34 @@ public class DirectoriesManager {
         reloadDatabase();
     }
     
-    public File findConfigFolder(File gameRootDirectory) {
-        return new File(gameRootDirectory, "config");
-    }
-    
-    public File findTemplatesFolder(File gameRootDirectory) {
-        return new File(gameRootDirectory, "templates");
-    }
-    
-    public File findMemorialFolder(File gameRootDirectory) {
-        return new File(gameRootDirectory, "memorial");
-    }
-    
-    public File findSavesFolder(File gameRootDirectory) {
-        return new File(gameRootDirectory, "save");
-    }
-    
-    public File findGraveyardFolder(File gameRootDirectory) {
-        return new File(gameRootDirectory, "graveyard");
-    }
-    
-    public GameModInfo[] findMods(File gameRootDirectory) {
-        File modsDirectory = new File(gameRootDirectory, "data/mods");
-        
-        if (!modsDirectory.exists()) {
-            return new GameModInfo[0];
-        }
-        
-        ArrayList<GameModInfo> mods = new ArrayList();
-        for (File modDirectory : modsDirectory.listFiles()) {
-            File modInfoFile = new File(modDirectory, "modinfo.json");
-            if (!modInfoFile.exists()) {
-                continue;
-            }
-            
-            Gson gson = new Gson();
-            try {
-                String modInfoString = FileUtils.readFileToString(modInfoFile, Charset.defaultCharset());
-                JsonArray modInfoArray = gson.fromJson(modInfoString, JsonArray.class);
-                JsonObject modInfoObject = modInfoArray.get(0).getAsJsonObject();
-                String name = modInfoObject.get("name").getAsString();
-                JsonElement categoryElement = modInfoObject.get("category");
-                String category = categoryElement == null ? "no category" : categoryElement.getAsString();
-                String description = modInfoObject.get("description").getAsString();
-                mods.add(new GameModInfo(modDirectory, name, category, description));
-            } catch (IOException ex) {
-                logger.error("Unable to read mod info", ex);
-            }
-        }
-        
-        return mods.toArray(GameModInfo[]::new);
-    }
-    
-    public File findCurrentGameExecutable() {
-        File currentGameFolder = findCurrentGameFolder();
-        if (currentGameFolder == null) {
-            return null;
-        }
-        
-        File tilesExecutable = new File(currentGameFolder, "cataclysm-tiles.exe");
-        if (tilesExecutable.exists()) {
-            return tilesExecutable;
-        }
-        
-        File cursesExecutable = new File(currentGameFolder, "cataclysm.exe");
-        if (cursesExecutable.exists()) {
-            return cursesExecutable;
-        }
-        
-        return null;
-    }
-    
-    public File findOldBackupFolder() {
-        File[] files = gameFolder.listFiles();
+    public CddaDirectory findOldBackupDirectory() {
+        File[] files = gameDirectory.listFiles();
         for (File file : files) {
             if (file.isDirectory() && file.getName().endsWith(OLD_BACKUP_STRING)) {
-                return file;
+                return new CddaDirectory(file);
             }
         }
         
         return null;
     }
     
-    public File findBackupFolder() {
-        File[] files = gameFolder.listFiles();
+    public CddaDirectory findBackupDirectory() {
+        File[] files = gameDirectory.listFiles();
         for (File file : files) {
             if (file.isDirectory() && file.getName().endsWith(BACKUP_STRING)) {
-                return file;
+                return new CddaDirectory(file);
             }
         }
         
         return null;
     }
     
-    public File findCurrentGameFolder() {
-        File[] files = gameFolder.listFiles();
+    public CddaDirectory findCurrentGameDirectory() {
+        File[] files = gameDirectory.listFiles();
         for (File file : files) {
             String fileName = file.getName();
             if (file.isDirectory() && !fileName.endsWith(BACKUP_STRING) && !fileName.endsWith(OLD_BACKUP_STRING)) {
-                return file;
+                return new CddaDirectory(file);
             }
         }
         
@@ -206,7 +135,7 @@ public class DirectoriesManager {
     
     private void updateDatabases(DatabaseFileLocation[] databaseLocations) {
         for (DatabaseFileLocation databaseLocation : databaseLocations) {
-            File databaseFile = new File(databaseFolder, databaseLocation.getName());
+            File databaseFile = new File(databaseDirectory, databaseLocation.getName());
             
             try {
                 FileUtils.copyURLToFile(databaseLocation.getResource().getAsURL(), databaseFile);
@@ -239,7 +168,7 @@ public class DirectoriesManager {
     
     private void reloadDatabases(DatabaseFileLocation[] databaseLocations) {
         for (DatabaseFileLocation databaseLocation : databaseLocations) {
-            File databaseFile = new File(databaseFolder, databaseLocation.getName());
+            File databaseFile = new File(databaseDirectory, databaseLocation.getName());
             if (databaseFile.exists()) {
                 continue;
             }
@@ -254,26 +183,26 @@ public class DirectoriesManager {
     
     public boolean restoreBackup() {
         logger.info("Starting restoration process");
-        File backupFolder = findBackupFolder();
-        if (backupFolder == null) {
+        CddaDirectory backupDirectory = findBackupDirectory();
+        if (backupDirectory == null) {
             logger.info("No backup found, aborting restoration");
             return false;
         }
         
-        File currentGameFolder = findCurrentGameFolder();
-        if (currentGameFolder != null) {
+        CddaDirectory currentGameDirectory = findCurrentGameDirectory();
+        if (currentGameDirectory != null) {
             logger.info("Existing game installation found, deleting");
             try {
-                FileUtils.deleteDirectory(currentGameFolder);
+                FileUtils.deleteDirectory(currentGameDirectory.getRoot());
             } catch (IOException ex) {
                 logger.error("Unable to delete game installation", ex);
                 return false;
             }
         }
-        currentGameFolder = new File(backupFolder.getParentFile(), backupFolder.getName().replace(BACKUP_STRING, "").trim());
+        File newGameDirectory = new File(gameDirectory, backupDirectory.getName().replace(BACKUP_STRING, "").trim());
         
         try {
-            FileUtils.copyDirectory(backupFolder, currentGameFolder);
+            FileUtils.copyDirectory(backupDirectory.getRoot(), newGameDirectory);
         } catch (IOException ex) {
             logger.error("Unable to restore backup", ex);
         }
@@ -281,29 +210,29 @@ public class DirectoriesManager {
         return true;
     }
     
-    public File backupCurrentVersion() {
+    public CddaDirectory backupCurrentVersion() {
         logger.info("Starting backup process");
-        File currentGameFolder = findCurrentGameFolder();
-        if (currentGameFolder == null) {
+        CddaDirectory currentGameDirectory = findCurrentGameDirectory();
+        if (currentGameDirectory == null) {
             logger.info("No game installation found, aborting backup");
             return null;
         }
         
-        File backupFolder = findBackupFolder();
-        if (backupFolder != null) {
+        CddaDirectory backupDirectory = findBackupDirectory();
+        if (backupDirectory != null) {
             logger.info("Existing backup found, moving to old backup directory");
-            File oldBackupFolder = findOldBackupFolder();
-            if (oldBackupFolder != null) {
-                logger.info("Deleting old backup (this shouldn't happen unless launcher was closed mid-backup previously)");
+            CddaDirectory oldBackupDirectory = findOldBackupDirectory();
+            if (oldBackupDirectory != null) {
+                logger.warn("Deleting old backup (this shouldn't happen unless launcher was closed mid-backup previously)");
                 try {
-                    FileUtils.deleteDirectory(oldBackupFolder);
+                    FileUtils.deleteDirectory(oldBackupDirectory.getRoot());
                 } catch (IOException ex) {
                     logger.error("Unable to delete old backup", ex);
                     return null;
                 }
             }
-            oldBackupFolder = new File(backupFolder.getParentFile(), backupFolder.getName().replace(BACKUP_STRING, OLD_BACKUP_STRING));
-            boolean renamed = backupFolder.renameTo(oldBackupFolder);
+            File newOldBackupDirectory = new File(gameDirectory, backupDirectory.getName().replace(BACKUP_STRING, OLD_BACKUP_STRING));
+            boolean renamed = backupDirectory.getRoot().renameTo(newOldBackupDirectory);
             if (!renamed) {
                 logger.error("Unable to move backup to old backup directory");
                 return null;
@@ -311,24 +240,24 @@ public class DirectoriesManager {
         }
         
         logger.info("Creating backup");
-        backupFolder = new File(currentGameFolder.getParentFile(), currentGameFolder.getName() + " " + BACKUP_STRING);
-        boolean renamed = currentGameFolder.renameTo(backupFolder);
+        File newBackupDirectory = new File(gameDirectory, currentGameDirectory.getName() + " " + BACKUP_STRING);
+        boolean renamed = currentGameDirectory.getRoot().renameTo(newBackupDirectory);
         if (!renamed) {
             logger.error("Unable to move current game to backup directory");
             return null;
         }
         
-        File oldBackupFolder = findOldBackupFolder();
-        if (oldBackupFolder != null) {
+        CddaDirectory oldBackupDirectory = findOldBackupDirectory();
+        if (oldBackupDirectory != null) {
             logger.info("Deleting old backup");
             try {
-                FileUtils.deleteDirectory(oldBackupFolder);
+                FileUtils.deleteDirectory(oldBackupDirectory.getRoot());
             } catch (IOException ex) {
                 logger.error("Unable to delete old backup", ex);
             }
         }
         
-        return backupFolder;
+        return backupDirectory;
     }
     
     public File extractAndInstallVersion(BuildData data, File archiveFile) {
@@ -337,7 +266,7 @@ public class DirectoriesManager {
             ArchiveInputStream input = new ArchiveStreamFactory().createArchiveInputStream(bis);
             
             String buildString = data.getName() + " " + data.getGraphics();
-            File currentVersionFolder = new File(gameFolder, buildString);
+            File currentVersionFolder = new File(gameDirectory, buildString);
             
             logger.info("Extracting " + data.getName());
             ArchiveEntry entry;

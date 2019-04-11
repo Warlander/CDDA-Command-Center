@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import pl.warlander.cdda.launcher.model.builds.BuildData;
 import pl.warlander.cdda.launcher.model.builds.BuildsManager;
 import pl.warlander.cdda.launcher.model.changelog.ChangelogManager;
+import pl.warlander.cdda.launcher.model.directories.CddaDirectory;
 import pl.warlander.cdda.launcher.model.directories.GameModInfo;
 import pl.warlander.cdda.launcher.model.directories.LauncherModInfo;
 import pl.warlander.cdda.launcher.model.mods.ModType;
@@ -174,38 +175,31 @@ public class GamePane extends VBox {
     }
     
     private void updateComponents() {
-        File currentGameFolder = parent.getDirectoriesManager().findCurrentGameFolder();
-        if (currentGameFolder != null) {
-            buildField.setText(currentGameFolder.getName());
-        }
-        else {
-            buildField.setText("No game detected");
-        }
-        
-        if (currentGameFolder != null) {
-            LocalDateTime time = LocalDateTime.ofEpochSecond(currentGameFolder.lastModified() / 1000, 0, ZoneOffset.UTC);
+        CddaDirectory currentGameDirectory = parent.getDirectoriesManager().findCurrentGameDirectory();
+        if (currentGameDirectory != null) {
+            buildField.setText(currentGameDirectory.getName());
+            LocalDateTime time = LocalDateTime.ofEpochSecond(currentGameDirectory.getRoot().lastModified() / 1000, 0, ZoneOffset.UTC);
             updatedField.setText(time.toString().replace("T", " ") + " (" + TimeUtils.timestampToNowString(time) + ")");
+            
+            File currentGameExecutable = currentGameDirectory.getExecutable();
+            if (currentGameExecutable != null) {
+                launchGameButton.setText(LAUNCH_BUTTON_LAUNCH_TEXT);
+                launchGameButton.setDisable(false);
+            }
+            else {
+                launchGameButton.setText(LAUNCH_BUTTON_INVALID_EXECUTABLE_TEXT);
+                launchGameButton.setDisable(true);
+            }
         }
         else {
             updatedField.setText("No game detected");
-        }
-        
-        File currentGameExecutable = parent.getDirectoriesManager().findCurrentGameExecutable();
-        if (currentGameExecutable != null) {
-            launchGameButton.setText(LAUNCH_BUTTON_LAUNCH_TEXT);
-            launchGameButton.setDisable(false);
-        }
-        else if (currentGameFolder == null) {
             launchGameButton.setText(LAUNCH_BUTTON_INVALID_FOLDER_TEXT);
             launchGameButton.setDisable(true);
         }
-        else {
-            launchGameButton.setText(LAUNCH_BUTTON_INVALID_EXECUTABLE_TEXT);
-            launchGameButton.setDisable(true);
-        }
         
-        File backupFolder = parent.getDirectoriesManager().findBackupFolder();
-        restoreBackupButton.setDisable(backupFolder == null);
+        
+        CddaDirectory backupDirectory = parent.getDirectoriesManager().findBackupDirectory();
+        restoreBackupButton.setDisable(backupDirectory == null);
         
         if (parent.getDirectoriesManager().getLauncherProperties().useExperimentalBuilds) {
             experimentalBuildsRadio.setSelected(true);
@@ -222,15 +216,19 @@ public class GamePane extends VBox {
 
     private void onGameLaunchRequested(ActionEvent evt) {
         logger.info("Launching the game");
-        File currentGameFolder = parent.getDirectoriesManager().findCurrentGameFolder();
-        File currentGameExecutable = parent.getDirectoriesManager().findCurrentGameExecutable();
+        CddaDirectory currentGameDirectory = parent.getDirectoriesManager().findCurrentGameDirectory();
+        if (currentGameDirectory == null) {
+            logger.warn("Game folder not found");
+            return;
+        }
+        File currentGameExecutable = currentGameDirectory.getExecutable();
         if (currentGameExecutable == null) {
             logger.warn("Executable file not found");
             return;
         }
         
         ProcessBuilder pb = new ProcessBuilder(currentGameExecutable.getAbsolutePath());
-        pb.directory(currentGameFolder);
+        pb.directory(currentGameDirectory.getRoot());
         try {
             pb.start();
             logger.info("Game launched");
@@ -280,15 +278,15 @@ public class GamePane extends VBox {
         parent.submitDownload(newVersionDownloadTask);
         
         parent.submitTask(() -> {
-            if (parent.getDirectoriesManager().findCurrentGameFolder() != null) {
+            if (parent.getDirectoriesManager().findCurrentGameDirectory() != null) {
                 backupGame();
-                if (parent.getDirectoriesManager().findBackupFolder() == null) {
+                if (parent.getDirectoriesManager().findBackupDirectory() == null) {
                     logger.warn("No backup found, aborting update");
                     return;
                 }
             }
             extractGame(selectedBuild, temporaryDownloadFile);
-            if (parent.getDirectoriesManager().findBackupFolder() != null) {
+            if (parent.getDirectoriesManager().findBackupDirectory() != null) {
                 copySaves();
                 copyMods();
             }
@@ -317,65 +315,55 @@ public class GamePane extends VBox {
     }
     
     private void copySaves() {
-        File backupFolder = parent.getDirectoriesManager().findBackupFolder();
-        File currentFolder = parent.getDirectoriesManager().findCurrentGameFolder();
+        CddaDirectory backupDirectory = parent.getDirectoriesManager().findBackupDirectory();
+        CddaDirectory currentDirectory = parent.getDirectoriesManager().findCurrentGameDirectory();
         
-        Platform.runLater(() -> {
-            parent.getStatusBar().setText("Copying memorial");
-        });
-        
-        File backupMemorial = parent.getDirectoriesManager().findMemorialFolder(backupFolder);
-        File currentMemorial = parent.getDirectoriesManager().findMemorialFolder(currentFolder);
         try {
-            FileUtils.copyDirectory(backupMemorial, currentMemorial);
+            Platform.runLater(() -> {
+                logger.info("Copying memorial");
+                parent.getStatusBar().setText("Copying memorial");
+            });
+            FileUtils.copyDirectory(backupDirectory.getMemorialDirectory(), currentDirectory.getMemorialDirectory());
         } catch (IOException ex) {
             logger.error("Unable to copy memorial", ex);
         }
         
-        Platform.runLater(() -> {
-            parent.getStatusBar().setText("Copying graveyard");
-        });
-        
-        File backupGraveyard = parent.getDirectoriesManager().findGraveyardFolder(backupFolder);
-        File currentGraveyard = parent.getDirectoriesManager().findGraveyardFolder(currentFolder);
         try {
-            FileUtils.copyDirectory(backupGraveyard, currentGraveyard);
+            Platform.runLater(() -> {
+                logger.info("Copying graveyard");
+                parent.getStatusBar().setText("Copying graveyard");
+            });
+            FileUtils.copyDirectory(backupDirectory.getGraveyardDirectory(), currentDirectory.getGraveyardDirectory());
         } catch (IOException ex) {
             logger.error("Unable to copy graveyard", ex);
         }
         
-        Platform.runLater(() -> {
-            parent.getStatusBar().setText("Copying templates");
-        });
-        
-        File backupTemplates = parent.getDirectoriesManager().findTemplatesFolder(backupFolder);
-        File currentTemplates = parent.getDirectoriesManager().findTemplatesFolder(currentFolder);
         try {
-            FileUtils.copyDirectory(backupTemplates, currentTemplates);
+            Platform.runLater(() -> {
+                logger.info("Copying templates");
+                parent.getStatusBar().setText("Copying templates");
+            });
+            FileUtils.copyDirectory(backupDirectory.getTemplatesDirectory(), currentDirectory.getTemplatesDirectory());
         } catch (IOException ex) {
             logger.error("Unable to copy templates", ex);
         }
         
-        Platform.runLater(() -> {
-            parent.getStatusBar().setText("Copying config");
-        });
-        
-        File backupConfig = parent.getDirectoriesManager().findConfigFolder(backupFolder);
-        File currentConfig = parent.getDirectoriesManager().findConfigFolder(currentFolder);
         try {
-            FileUtils.copyDirectory(backupConfig, currentConfig);
+            Platform.runLater(() -> {
+                logger.info("Copying config");
+                parent.getStatusBar().setText("Copying config");
+            });
+            FileUtils.copyDirectory(backupDirectory.getConfigDirectory(), currentDirectory.getConfigDirectory());
         } catch (IOException ex) {
-            logger.error("Unable to copy templates", ex);
+            logger.error("Unable to copy config", ex);
         }
         
-        Platform.runLater(() -> {
-            parent.getStatusBar().setText("Copying saves");
-        });
-        
-        File backupSaves = parent.getDirectoriesManager().findSavesFolder(backupFolder);
-        File currentSaves = parent.getDirectoriesManager().findSavesFolder(currentFolder);
         try {
-            FileUtils.copyDirectory(backupSaves, currentSaves);
+            Platform.runLater(() -> {
+                logger.info("Copying saves");
+                parent.getStatusBar().setText("Copying saves");
+            });
+            FileUtils.copyDirectory(backupDirectory.getSavesDirectory(), currentDirectory.getSavesDirectory());
         } catch (IOException ex) {
             logger.error("Unable to copy saves", ex);
         }
@@ -386,11 +374,11 @@ public class GamePane extends VBox {
             parent.getStatusBar().setText("Copying mods");
         });
         
-        File currentGameFolder = parent.getDirectoriesManager().findCurrentGameFolder();
-        File backupFolder = parent.getDirectoriesManager().findCurrentGameFolder();
+        CddaDirectory currentGameDirectory = parent.getDirectoriesManager().findCurrentGameDirectory();
+        CddaDirectory backupDirectory = parent.getDirectoriesManager().findCurrentGameDirectory();
         
-        GameModInfo[] newMods = parent.getDirectoriesManager().findMods(currentGameFolder);
-        GameModInfo[] oldMods = parent.getDirectoriesManager().findMods(backupFolder);
+        GameModInfo[] newMods = currentGameDirectory.findMods();
+        GameModInfo[] oldMods = backupDirectory.findMods();
         
         outer:
         for (GameModInfo oldMod : oldMods) {
@@ -402,7 +390,7 @@ public class GamePane extends VBox {
             }
             
             try {
-                FileUtils.copyDirectory(oldMod.getFolder(), new File(currentGameFolder, oldMod.getFolder().getName()));
+                FileUtils.copyDirectory(oldMod.getFolder(), new File(currentGameDirectory.getModsDirectory(), oldMod.getFolder().getName()));
             } catch (IOException ex) {
                 logger.error("Unable to copy mod " + oldMod.getName(), ex);
             }
@@ -414,8 +402,8 @@ public class GamePane extends VBox {
             parent.getStatusBar().setText("Updating mods info");
         });
         
-        File currentGameFolder = parent.getDirectoriesManager().findCurrentGameFolder();
-        GameModInfo[] newMods = parent.getDirectoriesManager().findMods(currentGameFolder);
+        CddaDirectory currentGameDirectory = parent.getDirectoriesManager().findCurrentGameDirectory();
+        GameModInfo[] newMods = currentGameDirectory.findMods();
         LauncherModInfo[] oldLauncherMods = parent.getDirectoriesManager().loadLauncherModsInfo();
         ArrayList<LauncherModInfo> updatedLauncherMods = new ArrayList();
         

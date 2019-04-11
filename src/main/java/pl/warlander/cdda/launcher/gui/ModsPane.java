@@ -8,6 +8,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import pl.warlander.cdda.launcher.model.directories.CddaDirectory;
 import pl.warlander.cdda.launcher.model.directories.GameModInfo;
 import pl.warlander.cdda.launcher.model.mods.ModType;
 import pl.warlander.cdda.launcher.model.mods.ModData;
@@ -46,9 +47,9 @@ public class ModsPane extends VBox {
         
         getChildren().add(modsTable);
         
-        File currentGameFolder = parent.getDirectoriesManager().findCurrentGameFolder();
-        if (currentGameFolder != null) {
-            GameModInfo[] foundMods = parent.getDirectoriesManager().findMods(currentGameFolder);
+        CddaDirectory currentGameDirectory = parent.getDirectoriesManager().findCurrentGameDirectory();
+        if (currentGameDirectory != null) {
+            GameModInfo[] foundMods = currentGameDirectory.findMods();
             for (GameModInfo foundMod : foundMods) {
                 ModData modData = new ModData(foundMod.getName(), foundMod.getCategory(), ModType.MAINLINED, true);
                 modsList.add(modData);
