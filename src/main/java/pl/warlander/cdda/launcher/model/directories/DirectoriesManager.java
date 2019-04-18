@@ -213,7 +213,7 @@ public class DirectoriesManager {
     public CddaDirectory backupCurrentVersion() {
         logger.info("Starting backup process");
         CddaDirectory currentGameDirectory = findCurrentGameDirectory();
-        if (currentGameDirectory == null) {
+        if (currentGameDirectory == null || !currentGameDirectory.isValid()) {
             logger.info("No game installation found, aborting backup");
             return null;
         }

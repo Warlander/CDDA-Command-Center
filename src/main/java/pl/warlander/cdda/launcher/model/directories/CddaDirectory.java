@@ -54,6 +54,15 @@ public class CddaDirectory {
         return mods.toArray(GameModInfo[]::new);
     }
     
+    public boolean isValid() {
+        boolean validModsDirectory = getModsDirectory().exists();
+        boolean validSoundpacksDirectory = getSoundpacksDirectory().exists();
+        boolean validTilesetsDirectory = getTilesetsDirectory().exists();
+        boolean validExecutable = getExecutable() != null;
+        
+        return validModsDirectory && validSoundpacksDirectory && validTilesetsDirectory && validExecutable;
+    }
+    
     public File getExecutable() {
         if (!root.exists()) {
             return null;
@@ -74,6 +83,14 @@ public class CddaDirectory {
     
     public File getModsDirectory() {
         return new File(root, "data/mods");
+    }
+    
+    public File getSoundpacksDirectory() {
+        return new File(root, "data/sound");
+    }
+    
+    public File getTilesetsDirectory() {
+        return new File(root, "gfx");
     }
     
     public File getConfigDirectory() {
